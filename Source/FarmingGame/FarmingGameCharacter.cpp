@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "FarmingGameCharacter.h"
 #include "Engine/LocalPlayer.h"
@@ -69,6 +69,14 @@ void AFarmingGameCharacter::NotifyControllerChanged()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (PC)
+	{
+		PC->bShowMouseCursor = true;   // Show cursor
+		PC->bEnableClickEvents = true; // Enable click detection
+		//PC->bEnableMouseOverEvents = true;
+	}
 }
 
 void AFarmingGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -85,6 +93,9 @@ void AFarmingGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AFarmingGameCharacter::Look);
+
+		EnhancedInputComponent->BindAction(IA_SpawnCrop, ETriggerEvent::Started, this, &AFarmingGameCharacter::SpawnCrop);
+		//PlayerInputComponent->BindAction("SpawnCrop", IE_Pressed, this, &AFarmingGameCharacter::SpawnCrop);
 	}
 	else
 	{
@@ -127,3 +138,85 @@ void AFarmingGameCharacter::Look(const FInputActionValue& Value)
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
 }
+
+void AFarmingGameCharacter::SpawnCrop()
+{
+	UE_LOG(LogTemp, Warning, TEXT("✅ SpawnCrop() function called!"));
+
+	if (!CropClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ CropClass is NULL! Assign BP_Crop in the editor."));
+		return;
+	}
+
+	APlayerController* PC = Cast<APlayerController>(GetController());
+	if (!PC)
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ PlayerController is NULL!"));
+		return;
+	}
+
+	FHitResult HitResult;
+	bool bHit = PC->GetHitResultUnderCursor(ECC_Visibility, false, HitResult);
+
+	if (!bHit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("❌ No hit detected under cursor!"));
+		return;
+	}
+
+	if (HitResult.bBlockingHit)
+	{
+		AActor* HitActor = HitResult.GetActor();
+		UPrimitiveComponent* HitComponent = HitResult.GetComponent();
+
+		if (HitActor)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("🔍 Hit Actor: %s"), *HitActor->GetName());
+			UE_LOG(LogTemp, Warning, TEXT("📌 Hit Location: %s"), *HitResult.ImpactPoint.ToString());
+
+			if (HitActor->ActorHasTag("CultivationArea"))
+			{
+				FVector SpawnLocation = HitResult.ImpactPoint;
+				FRotator SpawnRotation = FRotator::ZeroRotator;
+
+				UE_LOG(LogTemp, Warning, TEXT("🌱 Spawning Crop at: %s"), *SpawnLocation.ToString());
+
+				GetWorld()->SpawnActor<AActor>(CropClass, SpawnLocation, SpawnRotation);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("❌ Hit object does not have 'CultivationArea' tag!"));
+			}
+
+			// Check using Collision Object Type (If properly set)
+			if (HitResult.GetComponent() && HitResult.GetComponent()->GetCollisionObjectType() == ECC_GameTraceChannel1)
+			{
+				FVector SpawnLocation = HitResult.ImpactPoint;
+				FRotator SpawnRotation = FRotator::ZeroRotator;
+
+				UE_LOG(LogTemp, Warning, TEXT("🌱 Spawning Crop at: %s"), *SpawnLocation.ToString());
+
+				GetWorld()->SpawnActor<AActor>(CropClass, SpawnLocation, SpawnRotation);
+				return;
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("❌ Hit object does not have ECC_GameTraceChannel1"));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("❌ No valid HitActor detected!"));
+		}
+
+		if (HitComponent)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("🛠 Hit Component: %s"), *HitComponent->GetName());
+			UE_LOG(LogTemp, Warning, TEXT("🛠 Hit Component Object Type: %d"), HitComponent->GetCollisionObjectType());
+		}
+	}
+}
+
+
+

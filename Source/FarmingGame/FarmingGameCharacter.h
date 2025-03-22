@@ -55,6 +55,8 @@ protected:
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
+
+	void SpawnCrop();
 			
 
 protected:
@@ -68,5 +70,11 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	UInputAction* IA_SpawnCrop;
+
+	UPROPERTY(EditAnywhere, Category = "Crop Spawning")
+	TSubclassOf<AActor> CropClass;
 };
 
