@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "CultivationArea.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -158,8 +159,12 @@ void AFarmingGameCharacter::SpawnCrop()
 		return;
 	}
 
+	int32 ScreenX, ScreenY;
+	PC->GetViewportSize(ScreenX, ScreenY);
+	FVector2D ScreenCenter(ScreenX * 0.5f, ScreenY * 0.5f); // Center of screen
+
 	FHitResult HitResult;
-	bool bHit = PC->GetHitResultUnderCursor(ECC_Visibility, false, HitResult);
+	bool bHit = PC->GetHitResultAtScreenPosition(ScreenCenter, ECC_Visibility, true, HitResult);
 
 	if (!bHit)
 	{
@@ -167,69 +172,29 @@ void AFarmingGameCharacter::SpawnCrop()
 		return;
 	}
 
-	if (HitResult.bBlockingHit)
+	AActor* HitActor = HitResult.GetActor();
+	if (HitActor && HitActor->ActorHasTag("CultivationArea"))
 	{
-		AActor* HitActor = HitResult.GetActor();
-		UPrimitiveComponent* HitComponent = HitResult.GetComponent();
+		UE_LOG(LogTemp, Warning, TEXT("🔍 Hit Cultivation Area: %s"), *HitActor->GetName());
 
-		if (HitActor)
+		// Cast to BP_CultivationArea to check if a crop already exists
+		ACultivationArea* CultivationArea = Cast<ACultivationArea>(HitActor);
+		if (CultivationArea && !CultivationArea->HasCrop())
 		{
-		/*	UE_LOG(LogTemp, Warning, TEXT("🔍 Hit Actor: %s"), *HitActor->GetName());
-			UE_LOG(LogTemp, Warning, TEXT("📌 Hit Location: %s"), *HitResult.ImpactPoint.ToString());*/
+			FVector SpawnLocation = CultivationArea->GetActorLocation();
+			FRotator SpawnRotation = FRotator::ZeroRotator;
 
-			if (HitActor->ActorHasTag("CultivationArea"))
+			AActor* SpawnedCrop = GetWorld()->SpawnActor<AActor>(CropClass, SpawnLocation, SpawnRotation);
+
+			if (SpawnedCrop)
 			{
-				TArray<AActor*> OverlappingActors;
-				HitActor->GetOverlappingActors(OverlappingActors, CropClass);
-
-				if (OverlappingActors.Num() > 0)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("❌ A crop already exists on this Cultivation Area!"));
-					return;
-				}
-				// Get the center of the Cultivation Area
-				FVector CultivationAreaCenter = HitActor->GetActorLocation();
-				FVector SpawnLocation = CultivationAreaCenter; // The center of the cultivation area
-				FRotator SpawnRotation = FRotator::ZeroRotator;
-
-				/*FVector SpawnLocation = HitResult.ImpactPoint;
-				FRotator SpawnRotation = FRotator::ZeroRotator;*/
-
-				UE_LOG(LogTemp, Warning, TEXT("🌱 Spawning Crop at: %s"), *SpawnLocation.ToString());
-
-				GetWorld()->SpawnActor<AActor>(CropClass, SpawnLocation, SpawnRotation);
+				CultivationArea->PlantCrop(SpawnedCrop);
 			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("❌ Hit object does not have 'CultivationArea' tag!"));
-			}
-
-			// Check using Collision Object Type (If properly set)
-			/*if (HitResult.GetComponent() && HitResult.GetComponent()->GetCollisionObjectType() == ECC_GameTraceChannel1)
-			{
-				FVector SpawnLocation = HitResult.ImpactPoint;
-				FRotator SpawnRotation = FRotator::ZeroRotator;
-
-				UE_LOG(LogTemp, Warning, TEXT("🌱 Spawning Crop at: %s"), *SpawnLocation.ToString());
-
-				GetWorld()->SpawnActor<AActor>(CropClass, SpawnLocation, SpawnRotation);
-				return;
-			}
-			else
-			{
-				UE_LOG(LogTemp, Error, TEXT("❌ Hit object does not have ECC_GameTraceChannel1"));
-			}*/
 		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("❌ No valid HitActor detected!"));
-		}
-
-		if (HitComponent)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("🛠 Hit Component: %s"), *HitComponent->GetName());
-			UE_LOG(LogTemp, Warning, TEXT("🛠 Hit Component Object Type: %d"), HitComponent->GetCollisionObjectType());
-		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ Hit object is not a Cultivation Area!"));
 	}
 }
 
