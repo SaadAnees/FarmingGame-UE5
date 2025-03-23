@@ -6,6 +6,23 @@
 #include "GameFramework/Actor.h"
 #include "Crop.generated.h"
 
+UENUM(BlueprintType)
+enum class ECropType : uint8
+{
+	None      UMETA(DisplayName = "None"),
+	Wheat     UMETA(DisplayName = "Wheat"),
+	Rice      UMETA(DisplayName = "Rice"),
+	Corn      UMETA(DisplayName = "Corn")
+};
+
+UENUM(BlueprintType)
+enum class ECropState : uint8
+{
+	Sowing     UMETA(DisplayName = "Sowing"),
+	Growing    UMETA(DisplayName = "Growing"),
+	Harvesting UMETA(DisplayName = "Harvesting")
+};
+
 UCLASS()
 class FARMINGGAME_API ACrop : public AActor
 {
@@ -22,5 +39,11 @@ protected:
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crop Type")
+	ECropType CropType;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crop State")
+	ECropState CropState;
 
 };

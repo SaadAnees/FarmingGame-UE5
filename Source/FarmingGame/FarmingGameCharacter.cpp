@@ -70,14 +70,16 @@ void AFarmingGameCharacter::NotifyControllerChanged()
 		}
 	}
 
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (PC)
-	{
-		PC->bShowMouseCursor = true;   // Show cursor
-		PC->bEnableClickEvents = true; // Enable click detection
-		//PC->bEnableMouseOverEvents = true;
-	}
+	//APlayerController* PC = Cast<APlayerController>(GetController());
+	//if (PC)
+	//{
+	//	PC->bShowMouseCursor = true;   // Show cursor
+	//	PC->bEnableClickEvents = true; // Enable click detection
+	//	PC->bEnableMouseOverEvents = true;
+	//}
 }
+
+
 
 void AFarmingGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -172,13 +174,26 @@ void AFarmingGameCharacter::SpawnCrop()
 
 		if (HitActor)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("🔍 Hit Actor: %s"), *HitActor->GetName());
-			UE_LOG(LogTemp, Warning, TEXT("📌 Hit Location: %s"), *HitResult.ImpactPoint.ToString());
+		/*	UE_LOG(LogTemp, Warning, TEXT("🔍 Hit Actor: %s"), *HitActor->GetName());
+			UE_LOG(LogTemp, Warning, TEXT("📌 Hit Location: %s"), *HitResult.ImpactPoint.ToString());*/
 
 			if (HitActor->ActorHasTag("CultivationArea"))
 			{
-				FVector SpawnLocation = HitResult.ImpactPoint;
+				TArray<AActor*> OverlappingActors;
+				HitActor->GetOverlappingActors(OverlappingActors, CropClass);
+
+				if (OverlappingActors.Num() > 0)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("❌ A crop already exists on this Cultivation Area!"));
+					return;
+				}
+				// Get the center of the Cultivation Area
+				FVector CultivationAreaCenter = HitActor->GetActorLocation();
+				FVector SpawnLocation = CultivationAreaCenter; // The center of the cultivation area
 				FRotator SpawnRotation = FRotator::ZeroRotator;
+
+				/*FVector SpawnLocation = HitResult.ImpactPoint;
+				FRotator SpawnRotation = FRotator::ZeroRotator;*/
 
 				UE_LOG(LogTemp, Warning, TEXT("🌱 Spawning Crop at: %s"), *SpawnLocation.ToString());
 
@@ -190,7 +205,7 @@ void AFarmingGameCharacter::SpawnCrop()
 			}
 
 			// Check using Collision Object Type (If properly set)
-			if (HitResult.GetComponent() && HitResult.GetComponent()->GetCollisionObjectType() == ECC_GameTraceChannel1)
+			/*if (HitResult.GetComponent() && HitResult.GetComponent()->GetCollisionObjectType() == ECC_GameTraceChannel1)
 			{
 				FVector SpawnLocation = HitResult.ImpactPoint;
 				FRotator SpawnRotation = FRotator::ZeroRotator;
@@ -203,7 +218,7 @@ void AFarmingGameCharacter::SpawnCrop()
 			else
 			{
 				UE_LOG(LogTemp, Error, TEXT("❌ Hit object does not have ECC_GameTraceChannel1"));
-			}
+			}*/
 		}
 		else
 		{
