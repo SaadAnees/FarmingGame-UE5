@@ -18,9 +18,12 @@ enum class ECropType : uint8
 UENUM(BlueprintType)
 enum class ECropState : uint8
 {
-	Sowing     UMETA(DisplayName = "Sowing"),
-	Growing    UMETA(DisplayName = "Growing"),
-	Harvesting UMETA(DisplayName = "Harvesting")
+	Sowing      UMETA(DisplayName = "Sowing"),     
+	Growing     UMETA(DisplayName = "Growing"),   
+	Ripened     UMETA(DisplayName = "Ripened"),  
+	Harvesting  UMETA(DisplayName = "Harvesting"),
+	NeedsWater  UMETA(DisplayName = "Needs Water"),
+	Withered    UMETA(DisplayName = "Withered")
 };
 
 UCLASS()
@@ -42,10 +45,22 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crop Type")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crop")
 	ECropType CropType;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crop State")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crop")
 	ECropState CropState;
 
+	void CheckWateringStatus();
+	void WaterCrop();
+	void StartGrowing();
+	void GrowCrop();
+	void RipenCrop();
+	void Harvest();
+	void Wither();
+
+private:
+	FTimerHandle GrowthTimer;
+	FTimerHandle WateringTimer;
+	float WateringInterval = 30.0f; // Time before crop needs water
 };

@@ -39,3 +39,9 @@ void ACultivationArea::PlantCrop(AActor* Crop)
 	}
 }
 
+void ACultivationArea::ClearCrop()
+{
+	UE_LOG(LogTemp, Warning, TEXT("🛑 Cultivation Area cleared! Ready for new crop."));
+	PlantedCrop = nullptr;
+}
+

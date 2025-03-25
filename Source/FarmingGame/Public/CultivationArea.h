@@ -34,4 +34,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Farming")
 	void PlantCrop(AActor* Crop);
 
+	void ClearCrop();
+
 };

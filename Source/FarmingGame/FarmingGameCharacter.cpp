@@ -195,6 +195,19 @@ void AFarmingGameCharacter::SpawnCrop()
 	}
 
 	AActor* HitActor = HitResult.GetActor();
+
+	// Check if the hit actor is a crop for harvesting
+	if (HitActor && HitActor->ActorHasTag("Crop"))
+	{
+		ACrop* Crop = Cast<ACrop>(HitActor);
+		if (Crop)
+		{
+			Crop->Harvest();
+			return;
+		}
+	}
+
+	// If not a crop, check if it's a cultivation area
 	if (HitActor && HitActor->ActorHasTag("CultivationArea"))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("🔍 Hit Cultivation Area: %s"), *HitActor->GetName());
@@ -206,13 +219,13 @@ void AFarmingGameCharacter::SpawnCrop()
 			return;
 		}
 
-		if (CultivationArea->HasCrop())
+		if (CultivationArea->HasCrop())  // Ensure only one crop per area
 		{
 			UE_LOG(LogTemp, Warning, TEXT("❌ A crop is already planted in this Cultivation Area!"));
 			return;
 		}
 
-		// Get crop price from CropClass
+		// Get crop price
 		ACrop* CropTemplate = Cast<ACrop>(CropClass->GetDefaultObject());
 		if (!CropTemplate)
 		{
@@ -222,7 +235,6 @@ void AFarmingGameCharacter::SpawnCrop()
 
 		float CropCost = CropTemplate->CropCost;
 
-		// Check if player has enough budget
 		if (Budget < CropCost)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("❌ Not enough budget to plant this crop!"));
@@ -230,21 +242,15 @@ void AFarmingGameCharacter::SpawnCrop()
 		}
 
 		// Spawn the crop
-		FVector SpawnLocation = CultivationArea->GetActorLocation();
+		FVector SpawnLocation = CultivationArea->GetActorLocation();  // Centered on cultivation area
 		FRotator SpawnRotation = FRotator::ZeroRotator;
 
 		AActor* SpawnedCrop = GetWorld()->SpawnActor<AActor>(CropClass, SpawnLocation, SpawnRotation);
 		if (SpawnedCrop)
 		{
-			// Deduct crop cost from budget
-			ModifyBudget(-CropCost);
-
-			// Mark as planted
-			CultivationArea->HasCrop();
-
-			// Attach crop to the cultivation area
+			ModifyBudget(-CropCost);  // Deduct budget
+			CultivationArea->PlantCrop(SpawnedCrop);  // Mark as planted
 			SpawnedCrop->AttachToActor(CultivationArea, FAttachmentTransformRules::KeepWorldTransform);
-
 			UE_LOG(LogTemp, Warning, TEXT("✅ Crop planted successfully!"));
 		}
 	}
@@ -253,3 +259,4 @@ void AFarmingGameCharacter::SpawnCrop()
 		UE_LOG(LogTemp, Error, TEXT("❌ Hit object is not a Cultivation Area!"));
 	}
 }
+
