@@ -13,6 +13,8 @@ ACrop::ACrop()
 	UStaticMeshComponent* Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = Mesh;
 
+	CropCost = 100.0f; // Default price for crops
+
 }
 
 // Called when the game starts or when spawned

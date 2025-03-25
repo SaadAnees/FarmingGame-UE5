@@ -15,7 +15,7 @@ struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
-UCLASS(config=Game)
+UCLASS(config = Game)
 class AFarmingGameCharacter : public ACharacter
 {
 	GENERATED_BODY()
@@ -27,7 +27,7 @@ class AFarmingGameCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FollowCamera;
-	
+
 	/** MappingContext */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputMappingContext* DefaultMappingContext;
@@ -46,7 +46,7 @@ class AFarmingGameCharacter : public ACharacter
 
 public:
 	AFarmingGameCharacter();
-	
+
 
 protected:
 
@@ -57,7 +57,12 @@ protected:
 	void Look(const FInputActionValue& Value);
 
 	void SpawnCrop();
-			
+
+	void ModifyBudget(float Amount);
+
+	// Player's available budget
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Economy")
+	float Budget;
 
 protected:
 
@@ -76,5 +81,8 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Crop Spawning")
 	TSubclassOf<AActor> CropClass;
-};
 
+	// Function to get current budget
+	UFUNCTION(BlueprintCallable, Category = "Economy")
+	float GetBudget() const { return Budget; }
+};

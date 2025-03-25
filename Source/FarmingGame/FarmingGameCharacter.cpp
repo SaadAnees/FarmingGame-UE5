@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "CultivationArea.h"
+#include "Crop.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -21,7 +22,7 @@ AFarmingGameCharacter::AFarmingGameCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-		
+
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -53,6 +54,13 @@ AFarmingGameCharacter::AFarmingGameCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+
+	Budget = 1000.0f;
+
+	if (Budget < 0)
+	{
+		Budget = 0;
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -86,7 +94,7 @@ void AFarmingGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 {
 	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent)) {
-		
+
 		// Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
@@ -119,7 +127,7 @@ void AFarmingGameCharacter::Move(const FInputActionValue& Value)
 
 		// get forward vector
 		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-	
+
 		// get right vector 
 		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 
@@ -142,6 +150,20 @@ void AFarmingGameCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+void AFarmingGameCharacter::ModifyBudget(float Amount)
+{
+	Budget += Amount;
+
+	// Ensure budget doesn't go below zero
+	if (Budget < 0)
+	{
+		Budget = 0;
+	}
+
+	// Log updated budget
+	UE_LOG(LogTemp, Warning, TEXT("💰 Updated Budget: %f"), Budget);
+}
+
 void AFarmingGameCharacter::SpawnCrop()
 {
 	UE_LOG(LogTemp, Warning, TEXT("✅ SpawnCrop() function called!"));
@@ -161,14 +183,14 @@ void AFarmingGameCharacter::SpawnCrop()
 
 	int32 ScreenX, ScreenY;
 	PC->GetViewportSize(ScreenX, ScreenY);
-	FVector2D ScreenCenter(ScreenX * 0.5f, ScreenY * 0.5f); // Center of screen
+	FVector2D ScreenCenter(ScreenX * 0.5f, ScreenY * 0.5f);
 
 	FHitResult HitResult;
 	bool bHit = PC->GetHitResultAtScreenPosition(ScreenCenter, ECC_Visibility, true, HitResult);
 
 	if (!bHit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("❌ No hit detected under cursor!"));
+		UE_LOG(LogTemp, Warning, TEXT("❌ No hit detected at screen center!"));
 		return;
 	}
 
@@ -177,19 +199,53 @@ void AFarmingGameCharacter::SpawnCrop()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("🔍 Hit Cultivation Area: %s"), *HitActor->GetName());
 
-		// Cast to BP_CultivationArea to check if a crop already exists
 		ACultivationArea* CultivationArea = Cast<ACultivationArea>(HitActor);
-		if (CultivationArea && !CultivationArea->HasCrop())
+		if (!CultivationArea)
 		{
-			FVector SpawnLocation = CultivationArea->GetActorLocation();
-			FRotator SpawnRotation = FRotator::ZeroRotator;
+			UE_LOG(LogTemp, Error, TEXT("❌ Failed to cast to CultivationArea!"));
+			return;
+		}
 
-			AActor* SpawnedCrop = GetWorld()->SpawnActor<AActor>(CropClass, SpawnLocation, SpawnRotation);
+		if (CultivationArea->HasCrop())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("❌ A crop is already planted in this Cultivation Area!"));
+			return;
+		}
 
-			if (SpawnedCrop)
-			{
-				CultivationArea->PlantCrop(SpawnedCrop);
-			}
+		// Get crop price from CropClass
+		ACrop* CropTemplate = Cast<ACrop>(CropClass->GetDefaultObject());
+		if (!CropTemplate)
+		{
+			UE_LOG(LogTemp, Error, TEXT("❌ Could not get default crop instance!"));
+			return;
+		}
+
+		float CropCost = CropTemplate->CropCost;
+
+		// Check if player has enough budget
+		if (Budget < CropCost)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("❌ Not enough budget to plant this crop!"));
+			return;
+		}
+
+		// Spawn the crop
+		FVector SpawnLocation = CultivationArea->GetActorLocation();
+		FRotator SpawnRotation = FRotator::ZeroRotator;
+
+		AActor* SpawnedCrop = GetWorld()->SpawnActor<AActor>(CropClass, SpawnLocation, SpawnRotation);
+		if (SpawnedCrop)
+		{
+			// Deduct crop cost from budget
+			ModifyBudget(-CropCost);
+
+			// Mark as planted
+			CultivationArea->HasCrop();
+
+			// Attach crop to the cultivation area
+			SpawnedCrop->AttachToActor(CultivationArea, FAttachmentTransformRules::KeepWorldTransform);
+
+			UE_LOG(LogTemp, Warning, TEXT("✅ Crop planted successfully!"));
 		}
 	}
 	else
@@ -197,6 +253,3 @@ void AFarmingGameCharacter::SpawnCrop()
 		UE_LOG(LogTemp, Error, TEXT("❌ Hit object is not a Cultivation Area!"));
 	}
 }
-
-
-

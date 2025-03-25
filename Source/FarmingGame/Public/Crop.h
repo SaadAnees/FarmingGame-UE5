@@ -31,6 +31,8 @@ class FARMINGGAME_API ACrop : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ACrop();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Economy")
+	float CropCost;
 
 protected:
 	// Called when the game starts or when spawned
