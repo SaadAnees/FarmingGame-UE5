@@ -105,8 +105,8 @@ void AFarmingGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AFarmingGameCharacter::Look);
 
-		EnhancedInputComponent->BindAction(IA_SpawnCrop, ETriggerEvent::Started, this, &AFarmingGameCharacter::SpawnCrop);
-		//PlayerInputComponent->BindAction("SpawnCrop", IE_Pressed, this, &AFarmingGameCharacter::SpawnCrop);
+		// Spawn crop
+		//EnhancedInputComponent->BindAction(IA_SpawnCrop, ETriggerEvent::Started, this, &AFarmingGameCharacter::SpawnCrop);
 	}
 	else
 	{
@@ -164,15 +164,15 @@ void AFarmingGameCharacter::ModifyBudget(float Amount)
 	UE_LOG(LogTemp, Warning, TEXT("💰 Updated Budget: %f"), Budget);
 }
 
-void AFarmingGameCharacter::SpawnCrop()
+void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 {
-	UE_LOG(LogTemp, Warning, TEXT("✅ SpawnCrop() function called!"));
+	/*UE_LOG(LogTemp, Warning, TEXT("✅ SpawnCrop() function called!"));
 
 	if (!CropClass)
 	{
 		UE_LOG(LogTemp, Error, TEXT("❌ CropClass is NULL! Assign BP_Crop in the editor."));
 		return;
-	}
+	}*/
 
 	APlayerController* PC = Cast<APlayerController>(GetController());
 	if (!PC)
@@ -195,38 +195,35 @@ void AFarmingGameCharacter::SpawnCrop()
 	}
 
 	AActor* HitActor = HitResult.GetActor();
-
-	// Check if the hit actor is a crop for harvesting
-	if (HitActor && HitActor->ActorHasTag("Crop"))
-	{
-		ACrop* Crop = Cast<ACrop>(HitActor);
-		if (Crop)
-		{
-			Crop->Harvest();
-			return;
-		}
-	}
-
-	// If not a crop, check if it's a cultivation area
 	if (HitActor && HitActor->ActorHasTag("CultivationArea"))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("🔍 Hit Cultivation Area: %s"), *HitActor->GetName());
 
 		ACultivationArea* CultivationArea = Cast<ACultivationArea>(HitActor);
-		if (!CultivationArea)
+		if (!CultivationArea || CultivationArea->HasCrop())
 		{
-			UE_LOG(LogTemp, Error, TEXT("❌ Failed to cast to CultivationArea!"));
+			UE_LOG(LogTemp, Warning, TEXT("❌ Cultivation Area is already occupied!"));
 			return;
 		}
 
-		if (CultivationArea->HasCrop())  // Ensure only one crop per area
+		// Select the correct crop based on the chosen crop type
+		UClass* SelectedCropClass = nullptr;
+		if (SelectedCropType == ECropType::Wheat)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("❌ A crop is already planted in this Cultivation Area!"));
+			SelectedCropClass = WheatCropClass;
+		}
+		else if (SelectedCropType == ECropType::Rice)
+		{
+			SelectedCropClass = RiceCropClass;
+		}
+
+		if (!SelectedCropClass)
+		{
+			UE_LOG(LogTemp, Error, TEXT("❌ No valid crop class selected!"));
 			return;
 		}
 
-		// Get crop price
-		ACrop* CropTemplate = Cast<ACrop>(CropClass->GetDefaultObject());
+		ACrop* CropTemplate = Cast<ACrop>(SelectedCropClass->GetDefaultObject());
 		if (!CropTemplate)
 		{
 			UE_LOG(LogTemp, Error, TEXT("❌ Could not get default crop instance!"));
@@ -241,22 +238,19 @@ void AFarmingGameCharacter::SpawnCrop()
 			return;
 		}
 
-		// Spawn the crop
-		FVector SpawnLocation = CultivationArea->GetActorLocation();  // Centered on cultivation area
+		FVector SpawnLocation = CultivationArea->GetActorLocation();
 		FRotator SpawnRotation = FRotator::ZeroRotator;
 
-		AActor* SpawnedCrop = GetWorld()->SpawnActor<AActor>(CropClass, SpawnLocation, SpawnRotation);
+		ACrop* SpawnedCrop = GetWorld()->SpawnActor<ACrop>(SelectedCropClass, SpawnLocation, SpawnRotation);
 		if (SpawnedCrop)
 		{
-			ModifyBudget(-CropCost);  // Deduct budget
-			CultivationArea->PlantCrop(SpawnedCrop);  // Mark as planted
+			ModifyBudget(-CropCost);
+			CultivationArea->PlantCrop(SpawnedCrop);
 			SpawnedCrop->AttachToActor(CultivationArea, FAttachmentTransformRules::KeepWorldTransform);
+
 			UE_LOG(LogTemp, Warning, TEXT("✅ Crop planted successfully!"));
 		}
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("❌ Hit object is not a Cultivation Area!"));
-	}
 }
+
 

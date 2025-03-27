@@ -58,6 +58,7 @@ public:
 	void RipenCrop();
 	void Harvest();
 	void Wither();
+	void UpdateCropScale();
 
 private:
 	FTimerHandle GrowthTimer;

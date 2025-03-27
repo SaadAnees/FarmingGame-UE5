@@ -5,7 +5,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
+#include "Crop.h"
 #include "FarmingGameCharacter.generated.h"
+
 
 class USpringArmComponent;
 class UCameraComponent;
@@ -56,7 +58,8 @@ protected:
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
 
-	void SpawnCrop();
+	UFUNCTION(BlueprintCallable, Category = "Crop")
+	void SpawnCrop(ECropType SelectedCropType);
 
 	void ModifyBudget(float Amount);
 
@@ -79,8 +82,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* IA_SpawnCrop;
 
-	UPROPERTY(EditAnywhere, Category = "Crop Spawning")
-	TSubclassOf<AActor> CropClass;
+	/*UPROPERTY(EditAnywhere, Category = "Crop")
+	TSubclassOf<AActor> CropClass;*/
+
+	UPROPERTY(EditAnywhere, Category = "Crop")
+	TSubclassOf<ACrop> WheatCropClass;
+
+	UPROPERTY(EditAnywhere, Category = "Crop")
+	TSubclassOf<ACrop> RiceCropClass;
 
 	// Function to get current budget
 	UFUNCTION(BlueprintCallable, Category = "Economy")

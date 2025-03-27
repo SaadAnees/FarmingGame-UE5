@@ -39,6 +39,7 @@ void ACrop::CheckWateringStatus()
 	if (CropState == ECropState::Growing)
 	{
 		CropState = ECropState::NeedsWater;
+		UpdateCropScale();
 		UE_LOG(LogTemp, Warning, TEXT("Crop needs water!"));
 	}
 }
@@ -54,6 +55,7 @@ void ACrop::GrowCrop()
 	if (CropState == ECropState::Sowing)
 	{
 		CropState = ECropState::Growing;
+		UpdateCropScale();
 		UE_LOG(LogTemp, Warning, TEXT("Crop is now Growing!"));
 
 		// Schedule the next state change (Growing -> Ripened)
@@ -66,6 +68,7 @@ void ACrop::RipenCrop()
 	if (CropState == ECropState::Growing)
 	{
 		CropState = ECropState::Ripened;
+		UpdateCropScale();
 		UE_LOG(LogTemp, Warning, TEXT("Crop is now Ripened and ready to harvest!"));
 	}
 }
@@ -105,6 +108,26 @@ void ACrop::WaterCrop()
 		GetWorldTimerManager().SetTimer(WateringTimer, this, &ACrop::CheckWateringStatus, WateringInterval, true);
 		UE_LOG(LogTemp, Warning, TEXT("Crop watered!"));
 	}
+}
+
+void ACrop::UpdateCropScale()
+{
+	FVector NewScale;
+
+	switch (CropState)
+	{
+	case ECropState::Sowing:
+		NewScale = FVector(0.3f);
+		break;
+	case ECropState::Growing:
+		NewScale = FVector(0.6f);
+		break;
+	case ECropState::Ripened:
+		NewScale = FVector(1.0f);
+		break;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("📐 New Scale: %s"), *NewScale.ToString());
+	RootComponent->SetRelativeScale3D(NewScale);
 }
 
 
