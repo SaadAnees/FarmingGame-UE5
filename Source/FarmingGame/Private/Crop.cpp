@@ -4,6 +4,7 @@
 #include "Crop.h"
 #include "TimerManager.h"
 #include "CultivationArea.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values
 ACrop::ACrop()
@@ -15,6 +16,9 @@ ACrop::ACrop()
 	UStaticMeshComponent* Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = Mesh;
 
+	bAlwaysRelevant = true;
+	SetReplicates(true);
+	SetReplicateMovement(true);
 	CropCost = 100.0f; // Default price for crops
 	
 }
@@ -32,6 +36,27 @@ void ACrop::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void ACrop::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(ACrop, CropState);
+}
+
+void ACrop::OnRep_CropState()
+{
+	// This function is automatically called when CropState changes
+	UE_LOG(LogTemp, Warning, TEXT("Crop state updated to: %d"), (int32)CropState);
+}
+
+void ACrop::SetCropState(ECropState NewState)
+{
+	if (HasAuthority()) // Only the server should update state
+	{
+		CropState = NewState;
+		OnRep_CropState(); // Call manually on the server
+	}
 }
 
 void ACrop::CheckWateringStatus()
@@ -112,7 +137,7 @@ void ACrop::WaterCrop()
 
 void ACrop::UpdateCropScale()
 {
-	FVector NewScale;
+	/*FVector NewScale;
 
 	switch (CropState)
 	{
@@ -127,7 +152,7 @@ void ACrop::UpdateCropScale()
 		break;
 	}
 	UE_LOG(LogTemp, Warning, TEXT("📐 New Scale: %s"), *NewScale.ToString());
-	RootComponent->SetRelativeScale3D(NewScale);
+	RootComponent->SetRelativeScale3D(NewScale);*/
 }
 
 

@@ -34,6 +34,14 @@ class FARMINGGAME_API ACrop : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ACrop();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION()
+	void OnRep_CropState();
+
+	void SetCropState(ECropState NewState);
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Economy")
 	float CropCost;
 
@@ -48,7 +56,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crop")
 	ECropType CropType;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Crop")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_CropState, Category = "Crop")
 	ECropState CropState;
 
 	void CheckWateringStatus();

@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Logging/LogMacros.h"
 #include "Crop.h"
+#include "CultivationArea.h"
 #include "FarmingGameCharacter.generated.h"
 
 
@@ -63,8 +64,11 @@ protected:
 
 	void ModifyBudget(float Amount);
 
-	// Player's available budget
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Economy")
+
+	UFUNCTION()
+	void OnRep_Budget();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing = OnRep_Budget, Category = "Economy")
 	float Budget;
 
 protected:
@@ -72,6 +76,8 @@ protected:
 	virtual void NotifyControllerChanged() override;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:
 	/** Returns CameraBoom subobject **/
@@ -94,4 +100,15 @@ public:
 	// Function to get current budget
 	UFUNCTION(BlueprintCallable, Category = "Economy")
 	float GetBudget() const { return Budget; }
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_HarvestCrop(ACrop* CropToHarvest);
+
+	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
+	void Server_SpawnCrop(ECropType SelectedCropType);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Farming")
+	ACultivationArea* CultivationArea;
+
+
 };

@@ -11,6 +11,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "CultivationArea.h"
+#include "FarmingGameState.h"
+#include "Net/UnrealNetwork.h"
 #include "Crop.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -54,7 +56,10 @@ AFarmingGameCharacter::AFarmingGameCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
-
+	
+	SetReplicates(true);
+	SetReplicateMovement(true);
+	
 	Budget = 1000.0f;
 
 	if (Budget < 0)
@@ -107,6 +112,9 @@ void AFarmingGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 		// Spawn crop
 		//EnhancedInputComponent->BindAction(IA_SpawnCrop, ETriggerEvent::Started, this, &AFarmingGameCharacter::SpawnCrop);
+
+		// Bind planting action
+		//PlayerInputComponent->BindAction("PlantCrop", IE_Pressed, this, &AFarmingGameCharacter::TryPlantCrop);
 	}
 	else
 	{
@@ -152,105 +160,106 @@ void AFarmingGameCharacter::Look(const FInputActionValue& Value)
 
 void AFarmingGameCharacter::ModifyBudget(float Amount)
 {
-	Budget += Amount;
+	if (HasAuthority()) {
+		Budget += Amount;
 
-	// Ensure budget doesn't go below zero
-	if (Budget < 0)
-	{
-		Budget = 0;
+		// Ensure budget doesn't go below zero
+		if (Budget < 0)
+		{
+			Budget = 0;
+		}
+
+		// Log updated budget
+		UE_LOG(LogTemp, Warning, TEXT("💰 Updated Budget: %f"), Budget);
 	}
-
-	// Log updated budget
-	UE_LOG(LogTemp, Warning, TEXT("💰 Updated Budget: %f"), Budget);
 }
 
 void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 {
-	/*UE_LOG(LogTemp, Warning, TEXT("✅ SpawnCrop() function called!"));
+	if (!HasAuthority()) return; // Ensure this only runs on the server
 
+	if (!CultivationArea)
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ CultivationArea is NULL! Cannot plant."));
+		return;
+	}
+
+	// ✅ Get CultivationArea center
+	FVector SpawnLocation = CultivationArea->GetActorLocation();
+	FRotator SpawnRotation = FRotator::ZeroRotator;
+
+	TSubclassOf<ACrop> CropClass = (SelectedCropType == ECropType::Wheat) ? WheatCropClass : RiceCropClass;
 	if (!CropClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ CropClass is NULL! Assign BP_Crop in the editor."));
-		return;
-	}*/
-
-	APlayerController* PC = Cast<APlayerController>(GetController());
-	if (!PC)
-	{
-		UE_LOG(LogTemp, Error, TEXT("❌ PlayerController is NULL!"));
+		UE_LOG(LogTemp, Error, TEXT("❌ No valid crop class selected!"));
 		return;
 	}
 
-	int32 ScreenX, ScreenY;
-	PC->GetViewportSize(ScreenX, ScreenY);
-	FVector2D ScreenCenter(ScreenX * 0.5f, ScreenY * 0.5f);
-
-	FHitResult HitResult;
-	bool bHit = PC->GetHitResultAtScreenPosition(ScreenCenter, ECC_Visibility, true, HitResult);
-
-	if (!bHit)
+	// ✅ Spawn crop at CultivationArea center
+	ACrop* NewCrop = GetWorld()->SpawnActor<ACrop>(CropClass, SpawnLocation, SpawnRotation);
+	if (NewCrop)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("❌ No hit detected at screen center!"));
-		return;
-	}
-
-	AActor* HitActor = HitResult.GetActor();
-	if (HitActor && HitActor->ActorHasTag("CultivationArea"))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("🔍 Hit Cultivation Area: %s"), *HitActor->GetName());
-
-		ACultivationArea* CultivationArea = Cast<ACultivationArea>(HitActor);
-		if (!CultivationArea || CultivationArea->HasCrop())
-		{
-			UE_LOG(LogTemp, Warning, TEXT("❌ Cultivation Area is already occupied!"));
-			return;
-		}
-
-		// Select the correct crop based on the chosen crop type
-		UClass* SelectedCropClass = nullptr;
-		if (SelectedCropType == ECropType::Wheat)
-		{
-			SelectedCropClass = WheatCropClass;
-		}
-		else if (SelectedCropType == ECropType::Rice)
-		{
-			SelectedCropClass = RiceCropClass;
-		}
-
-		if (!SelectedCropClass)
-		{
-			UE_LOG(LogTemp, Error, TEXT("❌ No valid crop class selected!"));
-			return;
-		}
-
-		ACrop* CropTemplate = Cast<ACrop>(SelectedCropClass->GetDefaultObject());
-		if (!CropTemplate)
-		{
-			UE_LOG(LogTemp, Error, TEXT("❌ Could not get default crop instance!"));
-			return;
-		}
-
-		float CropCost = CropTemplate->CropCost;
-
-		if (Budget < CropCost)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("❌ Not enough budget to plant this crop!"));
-			return;
-		}
-
-		FVector SpawnLocation = CultivationArea->GetActorLocation();
-		FRotator SpawnRotation = FRotator::ZeroRotator;
-
-		ACrop* SpawnedCrop = GetWorld()->SpawnActor<ACrop>(SelectedCropClass, SpawnLocation, SpawnRotation);
-		if (SpawnedCrop)
-		{
-			ModifyBudget(-CropCost);
-			CultivationArea->PlantCrop(SpawnedCrop);
-			SpawnedCrop->AttachToActor(CultivationArea, FAttachmentTransformRules::KeepWorldTransform);
-
-			UE_LOG(LogTemp, Warning, TEXT("✅ Crop planted successfully!"));
-		}
+		NewCrop->SetReplicates(true);
+		UE_LOG(LogTemp, Warning, TEXT("🌱 Crop planted successfully at (%s)!"), *SpawnLocation.ToString());
 	}
 }
+
+
+
+void AFarmingGameCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AFarmingGameCharacter, Budget);
+}
+
+void AFarmingGameCharacter::Server_HarvestCrop_Implementation(ACrop* CropToHarvest)
+{
+	if (CropToHarvest)
+	{
+		CropToHarvest->Destroy();
+	}
+}
+
+bool AFarmingGameCharacter::Server_HarvestCrop_Validate(ACrop* CropToHarvest)
+{
+	return true; // Simple validation
+}
+
+void AFarmingGameCharacter::Server_SpawnCrop_Implementation(ECropType SelectedCropType)
+{
+	if (!HasAuthority()) return;
+
+	if (!CultivationArea)  // ✅ Prevent calling IsPlayerInside on null CultivationArea
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ CultivationArea is NULL! Cannot plant."));
+		return;
+	}
+
+	if (CultivationArea->IsPlayerInside())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("✅ Player is inside, proceeding to plant crop."));
+		SpawnCrop(SelectedCropType);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ You must be inside a Cultivation Area to plant crops!"));
+	}
+
+	
+}
+
+bool AFarmingGameCharacter::Server_SpawnCrop_Validate(ECropType SelectedCropType)
+{
+	return true; // Add validation logic if needed
+}
+
+void AFarmingGameCharacter::OnRep_Budget()
+{
+	UE_LOG(LogTemp, Warning, TEXT("💰 Budget updated on client: %f"), Budget);
+}
+
+
+
+
 
 
