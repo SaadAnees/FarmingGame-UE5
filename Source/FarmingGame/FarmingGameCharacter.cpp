@@ -184,7 +184,13 @@ void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 		return;
 	}
 
-	// ✅ Get CultivationArea center
+	// ✅ Prevent planting if a crop is already present
+	if (CultivationArea->HasCrop())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("❌ This Cultivation Area already has a crop!"));
+		return;
+	}
+
 	FVector SpawnLocation = CultivationArea->GetActorLocation();
 	FRotator SpawnRotation = FRotator::ZeroRotator;
 
@@ -200,9 +206,11 @@ void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 	if (NewCrop)
 	{
 		NewCrop->SetReplicates(true);
+		CultivationArea->PlantCrop(NewCrop);  // ✅ Track the planted crop
 		UE_LOG(LogTemp, Warning, TEXT("🌱 Crop planted successfully at (%s)!"), *SpawnLocation.ToString());
 	}
 }
+
 
 
 
