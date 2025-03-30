@@ -4,6 +4,7 @@
 #include "Crop.h"
 #include "TimerManager.h"
 #include "CultivationArea.h"
+#include "FarmingGame/FarmingGameCharacter.h"
 #include "FarmingGameState.h"
 #include "Net/UnrealNetwork.h"
 
@@ -21,7 +22,7 @@ ACrop::ACrop()
 	bReplicates = true;
 	/*SetReplicates(true);
 	SetReplicateMovement(true);*/
-	CropCost = 100.0f; // Default price for crops
+	CropCost = 100.0f; 
 	
 }
 
@@ -36,7 +37,7 @@ void ACrop::BeginPlay()
 // Called every frame
 void ACrop::Tick(float DeltaTime)
 {
-	
+	Super::Tick(DeltaTime);
 }
 
 void ACrop::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -84,7 +85,6 @@ void ACrop::GrowCrop()
 		UpdateCropScale();
 		UE_LOG(LogTemp, Warning, TEXT("Crop is now Growing!"));
 
-		// Schedule the next state change (Growing -> Ripened)
 		GetWorldTimerManager().SetTimer(GrowthTimer, this, &ACrop::RipenCrop, 10.0f, false);
 	}
 }
@@ -108,9 +108,8 @@ void ACrop::Harvest()
 		ACultivationArea* CultivationArea = Cast<ACultivationArea>(GetAttachParentActor());
 		if (CultivationArea)
 		{
-			CultivationArea->ClearCrop();  // Notify the cultivation area
+			CultivationArea->ClearCrop();
 		}
-		// Destroy after harvesting or reset for replanting
 		Destroy();
 	}
 
@@ -126,7 +125,6 @@ void ACrop::Wither()
 	if (CropState == ECropState::Ripened)
 	{
 		CropState = ECropState::Withered;
-		//GetWorldTimerManager().ClearTimer(GrowthTimer);
 		UE_LOG(LogTemp, Warning, TEXT("☠️ Crop has withered!"));
 	}
 }

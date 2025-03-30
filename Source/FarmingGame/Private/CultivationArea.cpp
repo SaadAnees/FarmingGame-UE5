@@ -42,7 +42,7 @@ void ACultivationArea::Tick(float DeltaTime)
 
 }
 
-void ACultivationArea::PlantCrop(AActor* Crop)
+void ACultivationArea::PlantCrop(ACrop* Crop)
 {
 	if (!Crop)  // ✅ Prevent crashes if Crop is null
 	{
@@ -79,7 +79,7 @@ void ACultivationArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, 
 	AFarmingGameCharacter* Player = Cast<AFarmingGameCharacter>(OtherActor);
 	if (Player)
 	{
-		Player->CultivationArea = this;  // ✅ Now Player always knows which area they are in.
+		Player->CultivationArea = this;
 		UE_LOG(LogTemp, Warning, TEXT("✅ Player entered cultivation area and assigned CultivationArea!"));
 	}
 }
@@ -97,5 +97,10 @@ bool ACultivationArea::IsPlayerInside()
 	CollisionBox->GetOverlappingActors(OverlappingActors, AFarmingGameCharacter::StaticClass());
 
 	return OverlappingActors.Num() > 0;
+}
+
+ACrop* ACultivationArea::GetPlantedCrop()
+{
+	return PlantedCrop;
 }
 

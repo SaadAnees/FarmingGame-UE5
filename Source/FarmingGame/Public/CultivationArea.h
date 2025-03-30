@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Crop.h"
 #include "CultivationArea.generated.h"
 
 class AFarmingGameCharacter;
@@ -33,7 +34,7 @@ public:
 
 	// Reference to the planted crop
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Farming")
-	AActor* PlantedCrop;
+	ACrop* PlantedCrop;
 
 	// Function to check if a crop exists
 	UFUNCTION(BlueprintCallable, Category = "Farming")
@@ -41,11 +42,13 @@ public:
 
 	// Function to plant a crop
 	UFUNCTION(BlueprintCallable, Category = "Farming")
-	void PlantCrop(AActor* Crop);
+	void PlantCrop(ACrop* Crop);
 
 	void ClearCrop();
 
 	bool IsPlayerInside();
+
+	ACrop* GetPlantedCrop();
 
 
 	UPROPERTY(VisibleAnywhere, Category = "Collision")

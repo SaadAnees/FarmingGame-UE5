@@ -13,7 +13,6 @@
 #include "CultivationArea.h"
 #include "FarmingGameState.h"
 #include "Net/UnrealNetwork.h"
-#include "Crop.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -81,14 +80,6 @@ void AFarmingGameCharacter::NotifyControllerChanged()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
-
-	//APlayerController* PC = Cast<APlayerController>(GetController());
-	//if (PC)
-	//{
-	//	PC->bShowMouseCursor = true;   // Show cursor
-	//	PC->bEnableClickEvents = true; // Enable click detection
-	//	PC->bEnableMouseOverEvents = true;
-	//}
 }
 
 
@@ -158,7 +149,9 @@ void AFarmingGameCharacter::Look(const FInputActionValue& Value)
 
 void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 {
-	//AddHarvestedCrops(5);
+	UClass* SelectedCropClass = (SelectedCropType == ECropType::Wheat) ? WheatCropClass : RiceCropClass;
+	ACrop* CropTemplate = Cast<ACrop>(SelectedCropClass->GetDefaultObject());
+
 	if (!CultivationArea)
 	{
 		UE_LOG(LogTemp, Error, TEXT("❌ CultivationArea is NULL! Cannot plant."));
@@ -168,19 +161,34 @@ void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 	// ✅ Prevent planting if a crop is already present
 	if (CultivationArea->HasCrop())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("❌ This Cultivation Area already has a crop!"));
+		ACrop* ExistingCrop = CultivationArea->GetPlantedCrop(); // Assuming you have a function to get the planted crop
+
+		if (ExistingCrop)
+		{
+			if (ExistingCrop->CropState == ECropState::Ripened)
+			{
+				// Only harvest if crop is ripened
+				Server_HarvestCrop(ExistingCrop);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("❌ Crop is not ripened yet!"));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("❌ No crop found in cultivation area!"));
+		}
 		return;
 	}
 
-	UClass* SelectedCropClass = (SelectedCropType == ECropType::Wheat) ? WheatCropClass : RiceCropClass;
-
+	// If no crop is planted, continue planting new crop
 	if (!SelectedCropClass)
 	{
 		UE_LOG(LogTemp, Error, TEXT("❌ No valid crop class selected!"));
 		return;
 	}
 
-	ACrop* CropTemplate = Cast<ACrop>(SelectedCropClass->GetDefaultObject());
 	if (!CropTemplate)
 	{
 		UE_LOG(LogTemp, Error, TEXT("❌ Could not get default crop instance!"));
@@ -188,7 +196,7 @@ void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 	}
 
 	AFarmingGameState* GameState = GetWorld()->GetGameState<AFarmingGameState>();
-	
+
 	float CropCost = CropTemplate->CropCost;
 
 	// Proceed with planting the crop
@@ -207,17 +215,18 @@ void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 		{
 			GameState->Server_ModifyBudget(CropCost);
 		}
-		
+
 		UE_LOG(LogTemp, Warning, TEXT("🌱 Crop planted successfully at (%s)!"), *SpawnLocation.ToString());
 	}
 }
+
 
 
 void AFarmingGameCharacter::Server_HarvestCrop_Implementation(ACrop* CropToHarvest)
 {
 	if (CropToHarvest)
 	{
-		CropToHarvest->Destroy();
+		CropToHarvest->Harvest();
 	}
 }
 
@@ -246,12 +255,11 @@ void AFarmingGameCharacter::Server_SpawnCrop_Implementation(ECropType SelectedCr
 		UE_LOG(LogTemp, Error, TEXT("❌ You must be inside a Cultivation Area to plant crops!"));
 	}
 
-	
 }
 
 bool AFarmingGameCharacter::Server_SpawnCrop_Validate(ECropType SelectedCropType)
 {
-	return true; // Add validation logic if needed
+	return true;
 }
 
 

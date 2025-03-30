@@ -38,6 +38,9 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION()
+	void AsignCrop();
+
+	UFUNCTION()
 	void OnRep_CropState();
 
 	void SetCropState(ECropState NewState);
@@ -71,5 +74,5 @@ public:
 private:
 	FTimerHandle GrowthTimer;
 	FTimerHandle WateringTimer;
-	float WateringInterval = 30.0f; // Time before crop needs water
+	float WateringInterval = 30.0f;
 };
