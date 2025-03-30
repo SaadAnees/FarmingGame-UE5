@@ -11,7 +11,6 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "CultivationArea.h"
-#include "FarmingGameState.h"
 #include "Net/UnrealNetwork.h"
 #include "Crop.h"
 
@@ -59,13 +58,20 @@ AFarmingGameCharacter::AFarmingGameCharacter()
 	
 	SetReplicates(true);
 	SetReplicateMovement(true);
-	
+	HarvestedCrops = 0;
 	Budget = 1000.0f;
 
 	if (Budget < 0)
 	{
 		Budget = 0;
 	}
+}
+
+void AFarmingGameCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AFarmingGameCharacter, HarvestedCrops);
+	DOREPLIFETIME(AFarmingGameCharacter, Budget);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -161,8 +167,8 @@ void AFarmingGameCharacter::Look(const FInputActionValue& Value)
 void AFarmingGameCharacter::ModifyBudget(float Amount)
 {
 	if (HasAuthority()) {
-		Budget += Amount;
-
+		Budget -= Amount;
+		OnRep_Budget();
 		// Ensure budget doesn't go below zero
 		if (Budget < 0)
 		{
@@ -176,8 +182,7 @@ void AFarmingGameCharacter::ModifyBudget(float Amount)
 
 void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 {
-	if (!HasAuthority()) return; // Ensure this only runs on the server
-
+	//AddHarvestedCrops(5);
 	if (!CultivationArea)
 	{
 		UE_LOG(LogTemp, Error, TEXT("❌ CultivationArea is NULL! Cannot plant."));
@@ -191,33 +196,50 @@ void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 		return;
 	}
 
-	FVector SpawnLocation = CultivationArea->GetActorLocation();
-	FRotator SpawnRotation = FRotator::ZeroRotator;
+	UClass* SelectedCropClass = (SelectedCropType == ECropType::Wheat) ? WheatCropClass : RiceCropClass;
 
-	TSubclassOf<ACrop> CropClass = (SelectedCropType == ECropType::Wheat) ? WheatCropClass : RiceCropClass;
-	if (!CropClass)
+	if (!SelectedCropClass)
 	{
 		UE_LOG(LogTemp, Error, TEXT("❌ No valid crop class selected!"));
 		return;
 	}
 
-	// ✅ Spawn crop at CultivationArea center
-	ACrop* NewCrop = GetWorld()->SpawnActor<ACrop>(CropClass, SpawnLocation, SpawnRotation);
+	ACrop* CropTemplate = Cast<ACrop>(SelectedCropClass->GetDefaultObject());
+	if (!CropTemplate)
+	{
+		UE_LOG(LogTemp, Error, TEXT("❌ Could not get default crop instance!"));
+		return;
+	}
+
+	float CropCost = CropTemplate->CropCost;
+
+	// Proceed with planting the crop
+	FVector SpawnLocation = CultivationArea->GetActorLocation();
+	FRotator SpawnRotation = FRotator::ZeroRotator;
+
+	// Spawn the crop
+	ACrop* NewCrop = GetWorld()->SpawnActor<ACrop>(SelectedCropClass, SpawnLocation, SpawnRotation);
 	if (NewCrop)
 	{
 		NewCrop->SetReplicates(true);
-		CultivationArea->PlantCrop(NewCrop);  // ✅ Track the planted crop
+		CultivationArea->PlantCrop(NewCrop);  // Track the planted crop
+
+		// Subtract the crop cost from the budget
+		Server_ModifyBudget(CropCost);
+		
 		UE_LOG(LogTemp, Warning, TEXT("🌱 Crop planted successfully at (%s)!"), *SpawnLocation.ToString());
 	}
 }
 
 
-
-
-void AFarmingGameCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void AFarmingGameCharacter::Server_ModifyBudget_Implementation(float amount)
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AFarmingGameCharacter, Budget);
+	ModifyBudget(amount);
+}
+
+bool AFarmingGameCharacter::Server_ModifyBudget_Validate(float amount)
+{
+	return true;
 }
 
 void AFarmingGameCharacter::Server_HarvestCrop_Implementation(ACrop* CropToHarvest)
@@ -230,7 +252,7 @@ void AFarmingGameCharacter::Server_HarvestCrop_Implementation(ACrop* CropToHarve
 
 bool AFarmingGameCharacter::Server_HarvestCrop_Validate(ACrop* CropToHarvest)
 {
-	return true; // Simple validation
+	return true;
 }
 
 void AFarmingGameCharacter::Server_SpawnCrop_Implementation(ECropType SelectedCropType)
@@ -264,6 +286,36 @@ bool AFarmingGameCharacter::Server_SpawnCrop_Validate(ECropType SelectedCropType
 void AFarmingGameCharacter::OnRep_Budget()
 {
 	UE_LOG(LogTemp, Warning, TEXT("💰 Budget updated on client: %f"), Budget);
+}
+
+void AFarmingGameCharacter::OnRep_HarvestedCrops()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Harvested Crops Updated: %d"), HarvestedCrops);
+
+	// TODO: Update UI here (e.g., call a function in your WBP_BudgetUI)
+}
+
+void AFarmingGameCharacter::AddHarvestedCrops(int32 Amount)
+{
+	if (HasAuthority())  // Ensure we only modify on the server
+	{
+		HarvestedCrops += Amount;
+		OnRep_HarvestedCrops();  // Call manually since it won’t trigger on the server
+	}
+	else
+	{
+		Server_AddHarvestedCrops(Amount);  // Request server to modify
+	}
+}
+
+void AFarmingGameCharacter::Server_AddHarvestedCrops_Implementation(int32 Amount)
+{
+	AddHarvestedCrops(Amount);
+}
+
+bool AFarmingGameCharacter::Server_AddHarvestedCrops_Validate(int32 Amount)
+{
+	return true;  // You can add validation logic if needed
 }
 
 

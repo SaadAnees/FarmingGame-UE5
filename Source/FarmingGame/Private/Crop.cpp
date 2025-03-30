@@ -4,6 +4,7 @@
 #include "Crop.h"
 #include "TimerManager.h"
 #include "CultivationArea.h"
+#include "FarmingGameState.h"
 #include "Net/UnrealNetwork.h"
 
 // Sets default values
@@ -17,8 +18,9 @@ ACrop::ACrop()
 	RootComponent = Mesh;
 
 	bAlwaysRelevant = true;
-	SetReplicates(true);
-	SetReplicateMovement(true);
+	bReplicates = true;
+	/*SetReplicates(true);
+	SetReplicateMovement(true);*/
 	CropCost = 100.0f; // Default price for crops
 	
 }
@@ -34,7 +36,7 @@ void ACrop::BeginPlay()
 // Called every frame
 void ACrop::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
+	
 
 }
 
@@ -77,6 +79,12 @@ void ACrop::StartGrowing()
 
 void ACrop::GrowCrop()
 {
+	AFarmingGameState* GameState = GetWorld()->GetGameState<AFarmingGameState>();
+	if (GameState)
+	{
+		GameState->Server_AddHarvestedCrops(5); // Increase harvested crops by 1
+	}
+
 	if (CropState == ECropState::Sowing)
 	{
 		CropState = ECropState::Growing;

@@ -1,7 +1,8 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "FarmingGameGameMode.h"
 #include "FarmingGameCharacter.h"
+#include "FarmingGameState.h"
 #include "UObject/ConstructorHelpers.h"
 
 AFarmingGameGameMode::AFarmingGameGameMode()
@@ -12,4 +13,6 @@ AFarmingGameGameMode::AFarmingGameGameMode()
 	{
 		DefaultPawnClass = PlayerPawnBPClass.Class;
 	}
+
+	GameStateClass = AFarmingGameState::StaticClass();
 }
