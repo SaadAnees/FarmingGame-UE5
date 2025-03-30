@@ -59,20 +59,11 @@ AFarmingGameCharacter::AFarmingGameCharacter()
 	
 	SetReplicates(true);
 	SetReplicateMovement(true);
-	HarvestedCrops = 0;
-	Budget = 1000.0f;
-
-	if (Budget < 0)
-	{
-		Budget = 0;
-	}
 }
 
 void AFarmingGameCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AFarmingGameCharacter, HarvestedCrops);
-	DOREPLIFETIME(AFarmingGameCharacter, Budget);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -165,22 +156,6 @@ void AFarmingGameCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-void AFarmingGameCharacter::ModifyBudget(float Amount)
-{
-	if (HasAuthority()) {
-		Budget -= Amount;
-		OnRep_Budget();
-		// Ensure budget doesn't go below zero
-		if (Budget < 0)
-		{
-			Budget = 0;
-		}
-
-		// Log updated budget
-		UE_LOG(LogTemp, Warning, TEXT("💰 Updated Budget: %f"), Budget);
-	}
-}
-
 void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 {
 	//AddHarvestedCrops(5);
@@ -238,16 +213,6 @@ void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 }
 
 
-void AFarmingGameCharacter::Server_ModifyBudget_Implementation(float amount)
-{
-	ModifyBudget(amount);
-}
-
-bool AFarmingGameCharacter::Server_ModifyBudget_Validate(float amount)
-{
-	return true;
-}
-
 void AFarmingGameCharacter::Server_HarvestCrop_Implementation(ACrop* CropToHarvest)
 {
 	if (CropToHarvest)
@@ -287,41 +252,6 @@ void AFarmingGameCharacter::Server_SpawnCrop_Implementation(ECropType SelectedCr
 bool AFarmingGameCharacter::Server_SpawnCrop_Validate(ECropType SelectedCropType)
 {
 	return true; // Add validation logic if needed
-}
-
-void AFarmingGameCharacter::OnRep_Budget()
-{
-	UE_LOG(LogTemp, Warning, TEXT("💰 Budget updated on client: %f"), Budget);
-}
-
-void AFarmingGameCharacter::OnRep_HarvestedCrops()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Harvested Crops Updated: %d"), HarvestedCrops);
-
-	// TODO: Update UI here (e.g., call a function in your WBP_BudgetUI)
-}
-
-void AFarmingGameCharacter::AddHarvestedCrops(int32 Amount)
-{
-	if (HasAuthority())  // Ensure we only modify on the server
-	{
-		HarvestedCrops += Amount;
-		OnRep_HarvestedCrops();  // Call manually since it won’t trigger on the server
-	}
-	else
-	{
-		Server_AddHarvestedCrops(Amount);  // Request server to modify
-	}
-}
-
-void AFarmingGameCharacter::Server_AddHarvestedCrops_Implementation(int32 Amount)
-{
-	AddHarvestedCrops(Amount);
-}
-
-bool AFarmingGameCharacter::Server_AddHarvestedCrops_Validate(int32 Amount)
-{
-	return true;  // You can add validation logic if needed
 }
 
 

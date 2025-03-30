@@ -62,15 +62,6 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Crop")
 	void SpawnCrop(ECropType SelectedCropType);
 
-	void ModifyBudget(float Amount);
-
-
-	UFUNCTION()
-	void OnRep_Budget();
-
-	UPROPERTY(BlueprintReadWrite, Replicated, Category = "Economy")
-	float Budget;
-
 protected:
 
 	virtual void NotifyControllerChanged() override;
@@ -97,9 +88,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Crop")
 	TSubclassOf<ACrop> RiceCropClass;
 
-	// Function to get current budget
-	UFUNCTION(BlueprintCallable, Category = "Economy")
-	float GetBudget() const { return Budget; }
+	
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_HarvestCrop(ACrop* CropToHarvest);
@@ -107,28 +96,9 @@ public:
 	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
 	void Server_SpawnCrop(ECropType SelectedCropType);
 
-	UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
-	void Server_ModifyBudget(float amount);
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Farming")
 	ACultivationArea* CultivationArea;
 
-	/** Harvested crop count, shared across all players */
-	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_HarvestedCrops, Category = "Economy")
-	int32 HarvestedCrops;
-
-	UFUNCTION(BlueprintCallable, Category = "Economy")
-	float GetHarvestedCrops() const { return HarvestedCrops; }
-	/** Called when HarvestedCrops is updated on clients */
-	UFUNCTION()
-	void OnRep_HarvestedCrops();
-
-	/** Function to add harvested crops (called when player harvests) */
-	void AddHarvestedCrops(int32 Amount);
-
-	/** Server function to modify harvested crop count */
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_AddHarvestedCrops(int32 Amount);
 
 
 };
