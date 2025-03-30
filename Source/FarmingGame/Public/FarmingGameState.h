@@ -17,9 +17,20 @@ class FARMINGGAME_API AFarmingGameState : public AGameStateBase
 public:
     AFarmingGameState();
 
+    UPROPERTY(ReplicatedUsing = OnRep_FarmBudget, BlueprintReadOnly, Category = "Economy")
+    float FarmBudget;
+
+    UFUNCTION()
+    void OnRep_FarmBudget();
+
+    UFUNCTION(Server, Reliable, WithValidation)
+    void Server_ModifyBudget(float Amount);
+
+    UFUNCTION(BlueprintCallable, Category = "Economy")
+    float GetFarmBudget() const { return FarmBudget; }
 
     /** Harvested crop count shared among all players */
-    UPROPERTY(ReplicatedUsing = OnRep_HarvestedCrops, BlueprintReadOnly, Category = "Farming")
+    UPROPERTY(ReplicatedUsing = OnRep_HarvestedCrops, BlueprintReadOnly, Category = "Economy")
     int32 HarvestedCrops;
 
     /** Called when HarvestedCrops is updated on clients */
@@ -32,7 +43,7 @@ public:
     void Server_AddHarvestedCrops_Implementation(int32 Amount);
     bool Server_AddHarvestedCrops_Validate(int32 Amount);
 
-    UFUNCTION(BlueprintCallable, Category = "StateEconomy")
+    UFUNCTION(BlueprintCallable, Category = "Economy")
     float GetHarvestedCrops() const { return HarvestedCrops; }
 
 protected:

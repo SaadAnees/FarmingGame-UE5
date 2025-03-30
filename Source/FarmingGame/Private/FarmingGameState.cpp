@@ -6,13 +6,33 @@
 
 AFarmingGameState::AFarmingGameState()
 {
-    //FarmBudget = 1000.0f; // Starting budget
-    //if (FarmBudget < 0)
-    //{
-    //    FarmBudget = 0;
-    //}
-    SetReplicates(true);
+    FarmBudget = 1000.0f; // Starting budget
+    if (FarmBudget < 0)
+    {
+        FarmBudget = 0;
+    }
+    
     HarvestedCrops = 0;
+
+    SetReplicates(true);
+}
+
+
+void AFarmingGameState::OnRep_FarmBudget()
+{
+    UE_LOG(LogTemp, Warning, TEXT("Farm Budget Updated: %f"), FarmBudget);
+}
+
+void AFarmingGameState::Server_ModifyBudget_Implementation(float Amount)
+{
+    FarmBudget -= Amount;
+    UE_LOG(LogTemp, Warning, TEXT("Server_ModifyBudget_Implementation: %f"), FarmBudget);
+    //OnRep_HarvestedCrops(); // Call manually on the server
+}
+
+bool AFarmingGameState::Server_ModifyBudget_Validate(float Amount)
+{
+    return true; 
 }
 
 void AFarmingGameState::OnRep_HarvestedCrops()
@@ -29,13 +49,14 @@ void AFarmingGameState::Server_AddHarvestedCrops_Implementation(int32 Amount)
 
 bool AFarmingGameState::Server_AddHarvestedCrops_Validate(int32 Amount)
 {
-    return true; // You can add validation if needed
+    return true;
 }
 
 void AFarmingGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(AFarmingGameState, HarvestedCrops);
+    DOREPLIFETIME(AFarmingGameState, FarmBudget);
 }
 
 

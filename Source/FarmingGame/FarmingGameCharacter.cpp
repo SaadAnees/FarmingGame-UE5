@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "CultivationArea.h"
+#include "FarmingGameState.h"
 #include "Net/UnrealNetwork.h"
 #include "Crop.h"
 
@@ -211,6 +212,8 @@ void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 		return;
 	}
 
+	AFarmingGameState* GameState = GetWorld()->GetGameState<AFarmingGameState>();
+	
 	float CropCost = CropTemplate->CropCost;
 
 	// Proceed with planting the crop
@@ -225,7 +228,10 @@ void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 		CultivationArea->PlantCrop(NewCrop);  // Track the planted crop
 
 		// Subtract the crop cost from the budget
-		Server_ModifyBudget(CropCost);
+		if (GameState)
+		{
+			GameState->Server_ModifyBudget(CropCost);
+		}
 		
 		UE_LOG(LogTemp, Warning, TEXT("🌱 Crop planted successfully at (%s)!"), *SpawnLocation.ToString());
 	}

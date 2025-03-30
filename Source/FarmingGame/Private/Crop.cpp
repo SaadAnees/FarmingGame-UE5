@@ -37,7 +37,6 @@ void ACrop::BeginPlay()
 void ACrop::Tick(float DeltaTime)
 {
 	
-
 }
 
 void ACrop::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -79,12 +78,6 @@ void ACrop::StartGrowing()
 
 void ACrop::GrowCrop()
 {
-	AFarmingGameState* GameState = GetWorld()->GetGameState<AFarmingGameState>();
-	if (GameState)
-	{
-		GameState->Server_AddHarvestedCrops(5); // Increase harvested crops by 1
-	}
-
 	if (CropState == ECropState::Sowing)
 	{
 		CropState = ECropState::Growing;
@@ -119,6 +112,12 @@ void ACrop::Harvest()
 		}
 		// Destroy after harvesting or reset for replanting
 		Destroy();
+	}
+
+	AFarmingGameState* GameState = GetWorld()->GetGameState<AFarmingGameState>();
+	if (GameState)
+	{
+		GameState->Server_AddHarvestedCrops(5);
 	}
 }
 
