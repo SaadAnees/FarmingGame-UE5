@@ -65,6 +65,11 @@ bool AFarmingGameState::Server_AddWheatCropCount_Validate(int32 Amount)
     return true;
 }
 
+void AFarmingGameState::SetWheatCropCount(int32 Amount)
+{
+    WheatCropCount -= Amount;
+}
+
 void AFarmingGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);

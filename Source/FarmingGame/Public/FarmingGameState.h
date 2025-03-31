@@ -56,6 +56,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Economy")
     float GetWheatCropCount() const { return WheatCropCount; }
 
+    UFUNCTION(BlueprintCallable, Category = "Economy")
+    void SetWheatCropCount(int32 Amount);
+
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
