@@ -66,7 +66,6 @@ void ACrop::CheckWateringStatus()
 	if (CropState == ECropState::Growing)
 	{
 		CropState = ECropState::NeedsWater;
-		UpdateCropScale();
 		UE_LOG(LogTemp, Warning, TEXT("Crop needs water!"));
 	}
 }
@@ -75,6 +74,7 @@ void ACrop::StartGrowing()
 {
 	// Start with Sowing -> Growing
 	GetWorldTimerManager().SetTimer(GrowthTimer, this, &ACrop::GrowCrop, 5.0f, false);
+	UpdateCropScale();
 }
 
 void ACrop::GrowCrop()
