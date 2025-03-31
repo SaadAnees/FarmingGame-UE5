@@ -38,9 +38,6 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION()
-	void AsignCrop();
-
-	UFUNCTION()
 	void OnRep_CropState();
 
 	void SetCropState(ECropState NewState);
