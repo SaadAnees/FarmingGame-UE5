@@ -227,6 +227,7 @@ void AFarmingGameCharacter::Server_HarvestCrop_Implementation(ACrop* CropToHarve
 	if (CropToHarvest)
 	{
 		CropToHarvest->Harvest();
+		CultivationArea->ClearCrop();
 	}
 }
 
