@@ -17,6 +17,7 @@ class FARMINGGAME_API AFarmingGameState : public AGameStateBase
 public:
     AFarmingGameState();
 
+    //Farm Budget
     UPROPERTY(ReplicatedUsing = OnRep_FarmBudget, BlueprintReadOnly, Category = "Economy")
     float FarmBudget;
 
@@ -29,39 +30,32 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Economy")
     float GetFarmBudget() const { return FarmBudget; }
 
-    /** Harvested crop count shared among all players */
-    UPROPERTY(ReplicatedUsing = OnRep_HarvestedCrops, BlueprintReadOnly, Category = "Economy")
-    int32 HarvestedCrops;
+    // Rice Crop count
+    UPROPERTY(ReplicatedUsing = OnRep_RiceCropCount, BlueprintReadOnly, Category = "Economy")
+    int32 RiceCropCount;
 
-    /** Called when HarvestedCrops is updated on clients */
     UFUNCTION()
-    void OnRep_HarvestedCrops();
+    void OnRep_RiceCropCount();
 
-    /** Modify harvested crops on the server */
     UFUNCTION(Server, Reliable, WithValidation)
-    void Server_AddHarvestedCrops(int32 Amount);
-    void Server_AddHarvestedCrops_Implementation(int32 Amount);
-    bool Server_AddHarvestedCrops_Validate(int32 Amount);
+    void Server_AddRiceCropCount(int32 Amount);
 
     UFUNCTION(BlueprintCallable, Category = "Economy")
-    float GetHarvestedCrops() const { return HarvestedCrops; }
+    float GetRiceCropCount() const { return RiceCropCount; }
+
+    // Wheat Crop count
+    UPROPERTY(ReplicatedUsing = OnRep_WheatCropCount, BlueprintReadOnly, Category = "Economy")
+    int32 WheatCropCount;
+
+    UFUNCTION()
+    void OnRep_WheatCropCount();
+
+    UFUNCTION(Server, Reliable, WithValidation)
+    void Server_AddWheatCropCount(int32 Amount);
+
+    UFUNCTION(BlueprintCallable, Category = "Economy")
+    float GetWheatCropCount() const { return WheatCropCount; }
 
 protected:
     virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 };
-
-  /*  virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-    UPROPERTY(ReplicatedUsing = OnRep_FarmBudget)
-    float FarmBudget;
-
-    UFUNCTION()
-    void OnRep_FarmBudget();
-
-    void ModifyBudget(float Amount);
-
-    UFUNCTION(BlueprintCallable, Server, Reliable, WithValidation)
-    void Server_ModifyBudget(float Amount);
-
-    UFUNCTION(BlueprintCallable, Category = "Economy")
-    float GetFarmBudget() const { return FarmBudget; }*/

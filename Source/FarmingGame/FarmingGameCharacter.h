@@ -79,16 +79,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	UInputAction* IA_SpawnCrop;
 
-	/*UPROPERTY(EditAnywhere, Category = "Crop")
-	TSubclassOf<AActor> CropClass;*/
-
 	UPROPERTY(EditAnywhere, Category = "Crop")
 	TSubclassOf<ACrop> WheatCropClass;
 
 	UPROPERTY(EditAnywhere, Category = "Crop")
 	TSubclassOf<ACrop> RiceCropClass;
 
-	
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_HarvestCrop(ACrop* CropToHarvest);

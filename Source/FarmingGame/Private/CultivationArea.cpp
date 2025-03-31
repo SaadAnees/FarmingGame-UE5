@@ -44,7 +44,7 @@ void ACultivationArea::Tick(float DeltaTime)
 
 void ACultivationArea::PlantCrop(ACrop* Crop)
 {
-	if (!Crop)  // ✅ Prevent crashes if Crop is null
+	if (!Crop)
 	{
 		UE_LOG(LogTemp, Error, TEXT("❌ Crop is NULL! Cannot plant."));
 		return;
@@ -57,18 +57,18 @@ void ACultivationArea::PlantCrop(ACrop* Crop)
 	}
 	else if (!IsPlayerInside())
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ You must be inside a Cultivation Area to plant crops!"));
+		UE_LOG(LogTemp, Error, TEXT("You must be inside a Cultivation Area to plant crops!"));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("❌ This Cultivation Area already has a crop!"));
+		UE_LOG(LogTemp, Warning, TEXT("This Cultivation Area already has a crop!"));
 	}
 }
 
 
 void ACultivationArea::ClearCrop()
 {
-	UE_LOG(LogTemp, Warning, TEXT("🛑 Cultivation Area cleared! Ready for new crop."));
+	UE_LOG(LogTemp, Warning, TEXT("Cultivation Area cleared! Ready for new crop."));
 	PlantedCrop = nullptr;
 }
 
@@ -80,14 +80,14 @@ void ACultivationArea::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, 
 	if (Player)
 	{
 		Player->CultivationArea = this;
-		UE_LOG(LogTemp, Warning, TEXT("✅ Player entered cultivation area and assigned CultivationArea!"));
+		UE_LOG(LogTemp, Warning, TEXT("Player entered cultivation area and assigned CultivationArea!"));
 	}
 }
 
 void ACultivationArea::OnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	UE_LOG(LogTemp, Warning, TEXT("❌ Player left cultivation area!"));
+	UE_LOG(LogTemp, Warning, TEXT("Player left cultivation area!"));
 	
 }
 

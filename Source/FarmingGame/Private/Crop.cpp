@@ -19,9 +19,9 @@ ACrop::ACrop()
 	RootComponent = Mesh;
 
 	bAlwaysRelevant = true;
-	bReplicates = true;
-	/*SetReplicates(true);
-	SetReplicateMovement(true);*/
+	SetReplicates(true);
+	SetReplicateMovement(true);
+
 	CropCost = 100.0f; 
 	
 }
@@ -54,10 +54,10 @@ void ACrop::OnRep_CropState()
 
 void ACrop::SetCropState(ECropState NewState)
 {
-	if (HasAuthority()) // Only the server should update state
+	if (HasAuthority()) 
 	{
 		CropState = NewState;
-		OnRep_CropState(); // Call manually on the server
+		OnRep_CropState();
 	}
 }
 
@@ -112,12 +112,6 @@ void ACrop::Harvest()
 		}
 		Destroy();
 	}
-
-	AFarmingGameState* GameState = GetWorld()->GetGameState<AFarmingGameState>();
-	if (GameState)
-	{
-		GameState->Server_AddHarvestedCrops(5);
-	}
 }
 
 void ACrop::Wither()
@@ -125,7 +119,7 @@ void ACrop::Wither()
 	if (CropState == ECropState::Ripened)
 	{
 		CropState = ECropState::Withered;
-		UE_LOG(LogTemp, Warning, TEXT("☠️ Crop has withered!"));
+		UE_LOG(LogTemp, Warning, TEXT("Crop has withered!"));
 	}
 }
 
@@ -142,22 +136,31 @@ void ACrop::WaterCrop()
 
 void ACrop::UpdateCropScale()
 {
-	/*FVector NewScale;
+	if (!RootComponent)
+	{
+		UE_LOG(LogTemp, Error, TEXT(" RootComponent is NULL in %s!"), *GetName());
+		return;
+	}
+
+	FVector NewScale(1.0f, 1.0f, 0.0f);
 
 	switch (CropState)
 	{
 	case ECropState::Sowing:
-		NewScale = FVector(0.3f);
+		NewScale = FVector(1.0f, 1.0f, 0.3f);
 		break;
 	case ECropState::Growing:
-		NewScale = FVector(0.6f);
+		NewScale = FVector(1.0f, 1.0f, 0.6f);
 		break;
 	case ECropState::Ripened:
-		NewScale = FVector(1.0f);
+		NewScale = FVector(1.0f, 1.0f, 1.0f);
 		break;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("📐 New Scale: %s"), *NewScale.ToString());
-	RootComponent->SetRelativeScale3D(NewScale);*/
+
+	UE_LOG(LogTemp, Warning, TEXT("New Scale: %s"), *NewScale.ToString());
+
+	SetActorScale3D(NewScale);
 }
+
 
 

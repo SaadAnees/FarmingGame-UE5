@@ -99,11 +99,6 @@ void AFarmingGameCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AFarmingGameCharacter::Look);
 
-		// Spawn crop
-		//EnhancedInputComponent->BindAction(IA_SpawnCrop, ETriggerEvent::Started, this, &AFarmingGameCharacter::SpawnCrop);
-
-		// Bind planting action
-		//PlayerInputComponent->BindAction("PlantCrop", IE_Pressed, this, &AFarmingGameCharacter::TryPlantCrop);
 	}
 	else
 	{
@@ -141,7 +136,6 @@ void AFarmingGameCharacter::Look(const FInputActionValue& Value)
 
 	if (Controller != nullptr)
 	{
-		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
 	}
@@ -154,44 +148,41 @@ void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 
 	if (!CultivationArea)
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ CultivationArea is NULL! Cannot plant."));
+		UE_LOG(LogTemp, Error, TEXT("CultivationArea is NULL! Cannot plant."));
 		return;
 	}
 
-	// ✅ Prevent planting if a crop is already present
 	if (CultivationArea->HasCrop())
 	{
-		ACrop* ExistingCrop = CultivationArea->GetPlantedCrop(); // Assuming you have a function to get the planted crop
+		ACrop* ExistingCrop = CultivationArea->GetPlantedCrop();
 
 		if (ExistingCrop)
 		{
 			if (ExistingCrop->CropState == ECropState::Ripened)
 			{
-				// Only harvest if crop is ripened
 				Server_HarvestCrop(ExistingCrop);
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("❌ Crop is not ripened yet!"));
+				UE_LOG(LogTemp, Warning, TEXT("Crop is not ripened yet!"));
 			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("❌ No crop found in cultivation area!"));
+			UE_LOG(LogTemp, Warning, TEXT("No crop found in cultivation area!"));
 		}
 		return;
 	}
 
-	// If no crop is planted, continue planting new crop
 	if (!SelectedCropClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ No valid crop class selected!"));
+		UE_LOG(LogTemp, Error, TEXT("No valid crop class selected!"));
 		return;
 	}
 
 	if (!CropTemplate)
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ Could not get default crop instance!"));
+		UE_LOG(LogTemp, Error, TEXT("Could not get default crop instance!"));
 		return;
 	}
 
@@ -199,24 +190,22 @@ void AFarmingGameCharacter::SpawnCrop(ECropType SelectedCropType)
 
 	float CropCost = CropTemplate->CropCost;
 
-	// Proceed with planting the crop
 	FVector SpawnLocation = CultivationArea->GetActorLocation();
 	FRotator SpawnRotation = FRotator::ZeroRotator;
 
-	// Spawn the crop
 	ACrop* NewCrop = GetWorld()->SpawnActor<ACrop>(SelectedCropClass, SpawnLocation, SpawnRotation);
 	if (NewCrop)
 	{
 		NewCrop->SetReplicates(true);
-		CultivationArea->PlantCrop(NewCrop);  // Track the planted crop
+		CultivationArea->PlantCrop(NewCrop);
 
-		// Subtract the crop cost from the budget
+		
 		if (GameState)
 		{
 			GameState->Server_ModifyBudget(CropCost);
 		}
 
-		UE_LOG(LogTemp, Warning, TEXT("🌱 Crop planted successfully at (%s)!"), *SpawnLocation.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Crop planted successfully at (%s)!"), *SpawnLocation.ToString());
 	}
 }
 
@@ -226,6 +215,17 @@ void AFarmingGameCharacter::Server_HarvestCrop_Implementation(ACrop* CropToHarve
 {
 	if (CropToHarvest)
 	{
+		AFarmingGameState* GameState = GetWorld()->GetGameState<AFarmingGameState>();
+
+		switch (CropToHarvest->CropType)
+		{
+		case ECropType::Rice:
+			GameState->Server_AddRiceCropCount(5);
+			break;
+		case ECropType::Wheat:
+			GameState->Server_AddWheatCropCount(5);
+			break;
+		}
 		CropToHarvest->Harvest();
 		CultivationArea->ClearCrop();
 	}
@@ -240,20 +240,20 @@ void AFarmingGameCharacter::Server_SpawnCrop_Implementation(ECropType SelectedCr
 {
 	if (!HasAuthority()) return;
 
-	if (!CultivationArea)  // ✅ Prevent calling IsPlayerInside on null CultivationArea
+	if (!CultivationArea)
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ CultivationArea is NULL! Cannot plant."));
+		UE_LOG(LogTemp, Error, TEXT("CultivationArea is NULL! Cannot plant."));
 		return;
 	}
 
 	if (CultivationArea->IsPlayerInside())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("✅ Player is inside, proceeding to plant crop."));
+		UE_LOG(LogTemp, Warning, TEXT("Player is inside, proceeding to plant crop."));
 		SpawnCrop(SelectedCropType);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("❌ You must be inside a Cultivation Area to plant crops!"));
+		UE_LOG(LogTemp, Error, TEXT("You must be inside a Cultivation Area to plant crops!"));
 	}
 
 }

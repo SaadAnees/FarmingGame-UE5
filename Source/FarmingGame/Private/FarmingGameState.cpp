@@ -12,8 +12,8 @@ AFarmingGameState::AFarmingGameState()
         FarmBudget = 0;
     }
     
-    HarvestedCrops = 0;
-
+    RiceCropCount = 0;
+    WheatCropCount = 0;
     SetReplicates(true);
 }
 
@@ -27,27 +27,40 @@ void AFarmingGameState::Server_ModifyBudget_Implementation(float Amount)
 {
     FarmBudget -= Amount;
     UE_LOG(LogTemp, Warning, TEXT("Server_ModifyBudget_Implementation: %f"), FarmBudget);
-    //OnRep_HarvestedCrops(); // Call manually on the server
 }
 
-bool AFarmingGameState::Server_ModifyBudget_Validate(float Amount)
+/// <summary>
+/// 
+/// </summary>
+void AFarmingGameState::OnRep_RiceCropCount()
 {
-    return true; 
+    UE_LOG(LogTemp, Warning, TEXT("Harvested Crops Updated: %d"), RiceCropCount);
 }
 
-void AFarmingGameState::OnRep_HarvestedCrops()
+void AFarmingGameState::Server_AddRiceCropCount_Implementation(int32 Amount)
 {
-    UE_LOG(LogTemp, Warning, TEXT("Harvested Crops Updated: %d"), HarvestedCrops);
+    RiceCropCount += Amount;
+    UE_LOG(LogTemp, Warning, TEXT("Server_AddHarvestedCrops_Implementation: %d"), RiceCropCount);
 }
 
-void AFarmingGameState::Server_AddHarvestedCrops_Implementation(int32 Amount)
+bool AFarmingGameState::Server_AddRiceCropCount_Validate(int32 Amount)
 {
-    HarvestedCrops += Amount;
-    UE_LOG(LogTemp, Warning, TEXT("Server_AddHarvestedCrops_Implementation: %d"), HarvestedCrops);
-    //OnRep_HarvestedCrops(); // Call manually on the server
+    return true;
 }
 
-bool AFarmingGameState::Server_AddHarvestedCrops_Validate(int32 Amount)
+
+void AFarmingGameState::OnRep_WheatCropCount()
+{
+    UE_LOG(LogTemp, Warning, TEXT("Wheat Crop Crops Updated: %d"), WheatCropCount);
+}
+
+void AFarmingGameState::Server_AddWheatCropCount_Implementation(int32 Amount)
+{
+    WheatCropCount += Amount;
+    UE_LOG(LogTemp, Warning, TEXT("Server_AddWheatCropCount_Implementation: %d"), WheatCropCount);
+}
+
+bool AFarmingGameState::Server_AddWheatCropCount_Validate(int32 Amount)
 {
     return true;
 }
@@ -55,8 +68,9 @@ bool AFarmingGameState::Server_AddHarvestedCrops_Validate(int32 Amount)
 void AFarmingGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-    DOREPLIFETIME(AFarmingGameState, HarvestedCrops);
     DOREPLIFETIME(AFarmingGameState, FarmBudget);
+    DOREPLIFETIME(AFarmingGameState, RiceCropCount);
+    DOREPLIFETIME(AFarmingGameState, WheatCropCount);
 }
 
 

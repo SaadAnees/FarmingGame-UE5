@@ -55,7 +55,7 @@ public:
 	UBoxComponent* CollisionBox;
 
 	UPROPERTY()
-	TArray<AFarmingGameCharacter*> PlayersInArea;  // ✅ No issue now
+	TArray<AFarmingGameCharacter*> PlayersInArea;
 
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
